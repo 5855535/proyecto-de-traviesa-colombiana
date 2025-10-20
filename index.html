@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colombia Trivia - Preguntados Colombiano</title>
+    <meta name="description" content="Juego de preguntas y respuestas sobre Colombia con categorías de Historia, Deportes, Geografía, Arte, Ciencia y Entretenimiento">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FFCD00",
+                        secondary: "#003893",
+                        accent: "#CE1126",
+                        success: "#28a745",
+                        warning: "#ffc107",
+                        danger: "#dc3545"
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'bounce-slow': 'bounce 2s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-yellow-100 to-blue-50 font-sans">
+    <!-- Header con Navegación -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <nav class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-r from-yellow-400 to-red-500 rounded-full"></div>
+                    <h1 class="text-xl font-bold text-gray-800">Colombia Trivia</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div id="userSection" class="hidden">
+                        <span id="userName" class="text-gray-700 font-medium"></span>
+                        <span id="userAge" class="text-gray-500 text-sm ml-2"></span>
+                        <button onclick="logout()" class="ml-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm transition duration-200">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                    <div id="authButtons">
+                        <button onclick="showLogin()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition duration-200">
+                            Iniciar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Modal de Login -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar Sesión</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Nombre</label>
+                    <input type="text" id="loginName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingresa tu nombre">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Edad</label>
+                    <input type="number" id="loginAge" required min="1" max="120" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingresa tu edad">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition duration-200">
+                    Ingresar
+                </button>
+            </form>
+            <button onclick="hideLogin()" class="w-full mt-4 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg font-medium transition duration-200">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Sección de Bienvenida -->
+        <div id="welcomeSection" class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">¡Bienvenido a Colombia Trivia!</h2>
+            <p class="text-xl text-gray-600 mb-8">Demuestra tu conocimiento sobre Colombia en este emocionante juego de preguntas</p>
+            
+            <!-- Estadísticas del Usuario -->
+            <div id="userStats" class="hidden bg-white rounded-xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Tus Estadísticas</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                        <div class="text-3xl font-bold text-yellow-600" id="currentStreak">0</div>
+                        <div class="text-gray-600">Racha Actual</div>
+                    </div>
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-3xl font-bold text-blue-600" id="totalCorrect">0</div>
+                        <div class="text-gray-600">Respuestas Correctas</div>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-3xl font-bold text-green-600" id="bestStreak">0</div>
+                        <div class="text-gray-600">Mejor Racha</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ruleta de Categorías -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto mb-12">
+            <h3 class="text-3xl font-bold text-center text-gray-800 mb-8">Gira la Ruleta</h3>
+            
+            <div class="relative flex justify-center items-center mb-8">
+                <!-- Ruleta -->
+                <div class="relative w-80 h-80">
+                    <canvas id="wheelCanvas" width="400" height="400" class="w-full h-full"></canvas>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center">
+                        <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                    </div>
+                </div>
+                
+                <!-- Flecha indicadora -->
+                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4">
+                    <div class="w-0 h-0 border-l-8 border-r-8 border-b-16 border-l-transparent border-r-transparent border-b-red-500"></div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button id="spinButton" onclick="spinWheel()" class="bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600 text-white font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Girar Ruleta
+                </button>
+            </div>
+            
+            <!-- Categoría Seleccionada -->
+            <div id="selectedCategory" class="hidden mt-6 text-center">
+                <div class="inline-block bg-blue-100 border-2 border-blue-300 rounded-xl px-6 py-3">
+                    <span class="text-2xl font-bold text-blue-800" id="categoryName"></span>
+                </div>
+                <button onclick="startGame()" class="ml-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                    Jugar Esta Categoría
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección del Juego -->
+        <div id="gameSection" class="hidden bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-yellow-100 px-4 py-2 rounded-lg">
+                        <span class="text-yellow-800 font-bold text-lg" id="currentCategoryDisplay"></span>
+                    </div>
+                    <div class="bg-green-100 px-4 py-2 rounded-lg">
+                        <span class="text-green-800 font-bold text-lg">Racha: <span id="streakCounter">0</span></span>
+                    </div>
+                </div>
+                <button onclick="endGame()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-200">
+                    Terminar Juego
+                </button>
+            </div>
+
+            <!-- Pregunta Actual -->
+            <div id="questionContainer" class="mb-8">
+                <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4" id="questionText">¿Cuál es la capital de Colombia?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="answersContainer">
+                        <!-- Las opciones se generan dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progreso -->
+            <div class="bg-gray-100 rounded-lg p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-700 font-medium">Progreso</span>
+                    <span class="text-gray-700 font-medium" id="progressText">0/0</span>
+                </div>
+                <div class="w-full bg-gray-300 rounded-full h-3">
+                    <div id="progressBar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultsSection" class="hidden bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto text-center">
+            <h3 class="text-3xl font-bold text-gray-800 mb-6">¡Juego Terminado!</h3>
+            <div class="text-6xl font-bold text-green-500 mb-4" id="finalScore">0</div>
+            <p class="text-xl text-gray-600 mb-2">Preguntas correctas</p>
+            <div class="text-2xl font-bold text-yellow-600 mb-6" id="finalStreak">Racha: 0</div>
+            <button onclick="resetGame()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg text-xl transition duration-200">
+                Jugar Otra Vez
+            </button>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="text-center">
+                <p class="text-lg mb-4">Colombia Trivia - Demuestra tu conocimiento sobre Colombia</p>
+                <div class="flex justify-center space-x-6">
+                    <a href="#" class="hover:text-yellow-400 transition duration-200">Términos de Servicio</a>
+                    <a href="#" class="hover:text-yellow-400 transition duration-200">Política de Privacidad</a>
+                    <a href="#" class="hover:text-yellow-400 transition duration-200">Contacto</a>
+                </div>
+                <p class="mt-6 text-gray-400">© 2024 Colombia Trivia. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Datos del juego
+        const categories = [
+            { "id": 1, "name": "Historia", "color": "#FF6B6B" },
+            { "id": 2, "name": "Deportes", "color": "#4ECDC4" },
+            { "id": 3, "name": "Geografía", "color": "#45B7D1" },
+            { "id": 4, "name": "Arte", "color": "#96CEB4" },
+            { "id": 5, "name": "Ciencia", "color": "#FFEAA7" },
+            { "id": 6, "name": "Entretenimiento", "color": "#DDA0DD" }
+        ];
+
+        const questions = {
+            "Historia": [
+                {
+                    "question": "¿En qué año se firmó la Constitución Política de Colombia?",
+                    "answers": ["1991", "1886", "1810", "2000"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Quién fue el primer presidente de Colombia?",
+                    "answers": ["Simón Bolívar", "Francisco de Paula Santander", "Antonio Nariño", "Rafael Núñez"],
+                    "correct": 1
+                },
+                {
+                    "question": "¿Qué evento histórico ocurrió el 20 de julio de 1810?",
+                    "answers": ["Independencia de Colombia", "Batalla de Boyacá", "Grito de Independencia", "Fundación de Bogotá"],
+                    "correct": 2
+                }
+            ],
+            "Deportes": [
+                {
+                    "question": "¿Qué deportista colombiano ganó la Vuelta a España 2016?",
+                    "answers": ["Nairo Quintana", "Rigoberto Urán", "Fernando Gaviria", "Egan Bernal"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿En qué año Colombia ganó su primera Copa América?",
+                    "answers": ["2001", "1993", "1987", "Nunca ha ganado"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Qué ciudad colombiana es conocida como la Capital del Deporte?",
+                    "answers": ["Cali", "Medellín", "Bogotá", "Barranquilla"],
+                    "correct": 0
+                }
+            ],
+            "Geografía": [
+                {
+                    "question": "¿Cuál es el río más importante de Colombia?",
+                    "answers": ["Río Magdalena", "Río Cauca", "Río Amazonas", "Río Orinoco"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Qué departamento colombiano tiene costa en dos océanos?",
+                    "answers": ["Chocó", "Antioquia", "Nariño", "La Guajira"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Cuál es la montaña más alta de Colombia?",
+                    "answers": ["Pico Cristóbal Colón", "Nevado del Ruiz", "Ritacuba Blanco", "Nevado del Huila"],
+                    "correct": 0
+                }
+            ],
+            "Arte": [
+                {
+                    "question": "¿Quién pintó 'El velorio'?",
+                    "answers": ["Andrés de Santa Maria", "Fernando Botero", "Alejandro Obregón", "Enrique Grau"],
+                    "correct": 1
+                },
+                {
+                    "question": "¿Qué escritor colombiano ganó el Nobel de Literatura en 1982?",
+                    "answers": ["Gabriel García Márquez", "Álvaro Mutis", "Fernando Vallejo", "Laura Restrepo"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Cuál es el instrumento nacional de Colombia?",
+                    "answers": ["Tiple", "Guitarra", "Maracas", "Arpa"],
+                    "correct": 0
+                }
+            ],
+            "Ciencia": [
+                {
+                    "question": "¿Qué científico colombiano descubrió la vacuna contra la lepra?",
+                    "answers": ["Manuel Elkin Patarroyo", "Salomón Hakim", "Jorge Reynolds", "Rodolfo Llinás"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Qué porcentaje del territorio colombiano es amazónico?",
+                    "answers": ["35%", "25%", "45%", "15%"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Cuántas especies de aves hay registradas en Colombia?",
+                    "answers": ["Más de 1900", "1200", "800", "2500"],
+                    "correct": 0
+                }
+            ],
+            "Entretenimiento": [
+                {
+                    "question": "¿Qué actriz colombiana ganó un premio Oscar?",
+                    "answers": ["Catalina Sandino Moreno", "Sofía Vergara", "Carolina Gaitán", "Ana de la Reguera"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿En qué ciudad se graba la telenovela 'Yo soy Betty, la fea'?",
+                    "answers": ["Bogotá", "Medellín", "Cali", "Barranquilla"],
+                    "correct": 0
+                },
+                {
+                    "question": "¿Qué grupo musical colombiano es conocido por 'La tierra del olvido'?",
+                    "answers": ["Carlos Vives", "Shakira", "Juanes", "Fonseca"],
+                    "correct": 0
+                }
+            ]
+        };
+
+        // Estado del juego
+        let currentUser = null;
+        let currentCategory = null;
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let currentStreak = 0;
+        let bestStreak = 0;
+        let isSpinning = false;
+
+        // Elementos del DOM
+        const userSection = document.getElementById("userSection");
+        const authButtons = document.getElementById("authButtons");
+        const userName = document.getElementById("userName");
+        const userAge = document.getElementById("userAge");
+        const userStats = document.getElementById("userStats");
+        const currentStreakElement = document.getElementById("currentStreak");
+        const totalCorrectElement = document.getElementById("totalCorrect");
+        const bestStreakElement = document.getElementById("bestStreak");
+        const loginModal = document.getElementById("loginModal");
+        const gameSection = document.getElementById("gameSection");
+        const resultsSection = document.getElementById("resultsSection");
+        const welcomeSection = document.getElementById("welcomeSection");
+        const selectedCategory = document.getElementById("selectedCategory");
+        const categoryName = document.getElementById("categoryName");
+        const currentCategoryDisplay = document.getElementById("currentCategoryDisplay");
+        const streakCounter = document.getElementById("streakCounter");
+        const questionText = document.getElementById("questionText");
+        const answersContainer = document.getElementById("answersContainer");
+        const progressBar = document.getElementById("progressBar");
+        const progressText = document.getElementById("progressText");
+        const finalScore = document.getElementById("finalScore");
+        const finalStreak = document.getElementById("finalStreak");
+
+        // Inicialización
+        document.addEventListener("DOMContentLoaded", function() {
+            checkLoggedInUser();
+            drawWheel();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById("loginForm").addEventListener("submit", handleLogin);
+        }
+
+        function checkLoggedInUser() {
+            const savedUser = localStorage.getItem("currentUser");
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUserInterface();
+            }
+        }
+
+        function updateUserInterface() {
+            if (currentUser) {
+                userSection.classList.remove("hidden");
+                authButtons.classList.add("hidden");
+                userName.textContent = currentUser.name;
+                userAge.textContent = `${currentUser.age} años`;
+                userStats.classList.remove("hidden");
+                updateUserStats();
+            } else {
+                userSection.classList.add("hidden");
+                authButtons.classList.remove("hidden");
+                userStats.classList.add("hidden");
+            }
+        }
+
+        function updateUserStats() {
+            const stats = JSON.parse(localStorage.getItem(`userStats_${currentUser.name}`)) || {
+                "currentStreak": 0,
+                "totalCorrect": 0,
+                "bestStreak": 0
+            };
+            
+            currentStreakElement.textContent = stats.currentStreak;
+            totalCorrectElement.textContent = stats.totalCorrect;
+            bestStreakElement.textContent = stats.bestStreak;
+        }
+
+        function showLogin() {
+            loginModal.classList.remove("hidden");
+        }
+
+        function hideLogin() {
+            loginModal.classList.add("hidden");
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById("loginName").value;
+            const age = document.getElementById("loginAge").value;
+            
+            if (!name || !age) {
+                showNotification("Por favor ingresa tu nombre y edad", "error");
+                return;
+            }
+            
+            currentUser = { "name": name, "age": age };
+            localStorage.setItem("currentUser", JSON.stringify(currentUser));
+            
+            // Crear estadísticas iniciales si no existen
+            if (!localStorage.getItem(`userStats_${name}`)) {
+                localStorage.setItem(`userStats_${name}`, JSON.stringify({
+                    "currentStreak": 0,
+                    "totalCorrect": 0,
+                    "bestStreak": 0
+                }));
+            }
+            
+            updateUserInterface();
+            hideLogin();
+            showNotification(`¡Bienvenido ${name}!`, "success");
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem("currentUser");
+            updateUserInterface();
+            showNotification("Sesión cerrada", "info");
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById("wheelCanvas");
+            const ctx = canvas.getContext("2d");
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2 - 10;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const sliceAngle = (2 * Math.PI) / categories.length;
+            
+            categories.forEach((category, index) => {
+                const startAngle = index * sliceAngle;
+                const endAngle = (index + 1) * sliceAngle;
+                
+                // Dibujar segmento
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = category.color;
+                ctx.fill();
+                ctx.stroke();
+                
+                // Dibujar texto
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#000000";
+                ctx.font = "bold 16px Inter";
+                ctx.fillText(category.name, radius - 20, 5);
+                ctx.restore();
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning || !currentUser) {
+                if (!currentUser) {
+                    showNotification("Debes iniciar sesión para jugar", "warning");
+                }
+                return;
+            }
+            
+            isSpinning = true;
+            const spinButton = document.getElementById("spinButton");
+            spinButton.disabled = true;
+            
+            const canvas = document.getElementById("wheelCanvas");
+            const spins = 5 + Math.random() * 5; // 5-10 vueltas
+            const degrees = spins * 360 + Math.floor(Math.random() * 360);
+            
+            canvas.style.transition = "transform 4s cubic-bezier(0.2, 0.8, 0.3, 1)";
+            canvas.style.transform = `rotate(${degrees}deg)`;
+            
+            setTimeout(() => {
+                isSpinning = false;
+                spinButton.disabled = false;
+                
+                // Calcular categoría seleccionada
+                const normalizedDegrees = degrees % 360;
+                const sliceAngle = 360 / categories.length;
+                const selectedIndex = Math.floor((360 - normalizedDegrees) / sliceAngle) % categories.length;
+                
+                currentCategory = categories[selectedIndex];
+                categoryName.textContent = currentCategory.name;
+                categoryName.style.color = currentCategory.color;
+                selectedCategory.classList.remove("hidden");
+                
+                showNotification(`¡Categoría seleccionada: ${currentCategory.name}!`, "success");
+            }, 4000);
+        }
+
+        function startGame() {
+            if (!currentCategory) return;
+            
+            welcomeSection.classList.add("hidden");
+            gameSection.classList.remove("hidden");
+            selectedCategory.classList.add("hidden");
+            
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            currentStreak = 0;
+            
+            currentCategoryDisplay.textContent = currentCategory.name;
+            currentCategoryDisplay.style.color = currentCategory.color;
+            streakCounter.textContent = currentStreak;
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const categoryQuestions = questions[currentCategory.name];
+            if (currentQuestionIndex >= categoryQuestions.length) {
+                endGame();
+                return;
+            }
+            
+            const question = categoryQuestions[currentQuestionIndex];
+            questionText.textContent = question.question;
+            
+            answersContainer.innerHTML = "";
+            question.answers.forEach((answer, index) => {
+                const button = document.createElement("button");
+                button.className = "bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl p-4 text-lg font-medium text-gray-800 transition-all duration-200 transform hover:scale-105 hover:shadow-md";
+                button.textContent = answer;
+                button.onclick = () => checkAnswer(index);
+                answersContainer.appendChild(button);
+            });
+            
+            updateProgress();
+        }
+
+        function checkAnswer(selectedIndex) {
+            const categoryQuestions = questions[currentCategory.name];
+            const question = categoryQuestions[currentQuestionIndex];
+            const buttons = answersContainer.querySelectorAll("button");
+            
+            // Deshabilitar todos los botones
+            buttons.forEach(button => button.disabled = true);
+            
+            // Mostrar respuesta correcta
+            buttons[question.correct].classList.add("bg-green-500", "text-white", "border-green-500");
+            
+            if (selectedIndex === question.correct) {
+                buttons[selectedIndex].classList.add("bg-green-500", "text-white", "border-green-500");
+                correctAnswers++;
+                currentStreak++;
+                streakCounter.textContent = currentStreak;
+                showNotification("¡Correcto!", "success");
+            } else {
+                buttons[selectedIndex].classList.add("bg-red-500", "text-white", "border-red-500");
+                currentStreak = 0;
+                streakCounter.textContent = currentStreak;
+                showNotification("Incorrecto", "error");
+            }
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, 2000);
+        }
+
+        function updateProgress() {
+            const categoryQuestions = questions[currentCategory.name];
+            const progress = (currentQuestionIndex / categoryQuestions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${currentQuestionIndex}/${categoryQuestions.length}`;
+        }
+
+        function endGame() {
+            gameSection.classList.add("hidden");
+            resultsSection.classList.remove("hidden");
+            
+            finalScore.textContent = correctAnswers;
+            finalStreak.textContent = `Mejor racha: ${currentStreak}`;
+            
+            // Actualizar estadísticas del usuario
+            if (currentUser) {
+                const userStats = JSON.parse(localStorage.getItem(`userStats_${currentUser.name}`)) || {
+                    "currentStreak": 0,
+                    "totalCorrect": 0,
+                    "bestStreak": 0
+                };
+                
+                userStats.totalCorrect += correctAnswers;
+                userStats.currentStreak = currentStreak;
+                userStats.bestStreak = Math.max(userStats.bestStreak, currentStreak);
+                
+                localStorage.setItem(`userStats_${currentUser.name}`, JSON.stringify(userStats));
+                updateUserStats();
+            }
+        }
+
+        function resetGame() {
+            resultsSection.classList.add("hidden");
+            welcomeSection.classList.remove("hidden");
+            currentCategory = null;
+            drawWheel();
+        }
+
+        function showNotification(message, type) {
+            // Crear notificación
+            const notification = document.createElement("div");
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white font-medium transform transition-all duration-300 ${
+                type === "success" ? "bg-green-500" :
+                type === "error" ? "bg-red-500" :
+                type === "warning" ? "bg-yellow-500" : "bg-blue-500"
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Animación de entrada
+            setTimeout(() => {
+                notification.style.transform = "translateX(0)";
+            }, 100);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                notification.style.transform = "translateX(100%)";
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
